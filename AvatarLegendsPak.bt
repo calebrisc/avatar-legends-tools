@@ -1,0 +1,34 @@
+LittleEndian();
+
+typedef struct
+{
+    char magic[4];
+    uint directoryOffset <format=hex>;
+    uint directorySize;
+} PakHeader;
+
+typedef struct
+{
+    char path[248];
+    uint offset <format=hex>;
+    uint size;
+} PakEntry <read=EntryName>;
+
+string EntryName(PakEntry &entry)
+{
+    return entry.path;
+}
+
+PakHeader header;
+
+if (header.magic[0] != 'P' || header.magic[1] != 'A' ||
+    header.magic[2] != 'C' || header.magic[3] != 'K')
+    Warning("Invalid PACK signature");
+
+if (header.directorySize % 256 != 0)
+    Warning("Invalid directory size");
+
+local uint entryCount = header.directorySize / 256;
+
+uchar data[header.directoryOffset - FTell()] <open=suppress>;
+PakEntry entries[entryCount] <optimize=false>;
